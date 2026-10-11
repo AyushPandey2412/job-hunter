@@ -1,4 +1,5 @@
 require('dotenv').config();
+if (process.env.GITHUB_ACTIONS && (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN)) throw new Error('Hosted database secrets are required for scheduled scans');
 const preferences = require('../services/preferences');
 const scraperCoordinator = require('./index');
 

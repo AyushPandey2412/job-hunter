@@ -437,25 +437,8 @@ function setupEventListeners() {
 // REAL-TIME SERVER-SENT EVENTS (SSE)
 // ----------------------------------------------------------------------------
 function initSSE() {
+  // Refresh the dashboard without keeping a serverless function open.
   setInterval(() => { loadJobs(); loadStats(); loadScheduler(); }, 60000);
-  return;
-  const eventSource = new EventSource('/api/stream');
-
-  eventSource.addEventListener('new_jobs_found', (e) => {
-    loadStats();
-    loadJobs();
-  });
-
-  eventSource.addEventListener('settings_updated', async () => { await readPreferences(); refreshTabCounts(); });
-  eventSource.addEventListener('scan_completed', () => { loadJobs(); loadStats(); loadScheduler(); });
-  eventSource.addEventListener('job_status_updated', (e) => {
-    loadJobs();
-    loadStats();
-  });
-
-  eventSource.onerror = () => {
-    // SSE auto-reconnects
-  };
 }
 
 // Helper: Format Time Ago
