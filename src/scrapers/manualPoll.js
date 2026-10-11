@@ -15,7 +15,17 @@ async function main() {
     await db.prepare('INSERT INTO scan_state VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET started_at=excluded.started_at').run(new Date().toISOString());
   }
   console.log('⚡ Running Manual One-Shot ATS Scan...');
-  const result = await scraperCoordinator.runCycle();
+  const cloud = process.env.GITHUB_ACTIONS ? require('../services/cloudScanState') : null;
+  const state = { lastStartedAt: new Date().toISOString(), error: null };
+  if (cloud) await cloud.save(state);
+  let result;
+  try {
+    result = await scraperCoordinator.runCycle();
+    if (cloud) await cloud.save({ ...state, lastCompletedAt: new Date().toISOString(), newJobsFound: result.newJobsFound });
+  } catch (error) {
+    if (cloud) await cloud.save({ ...state, lastCompletedAt: new Date().toISOString(), error: 'Scan failed; check GitHub Actions logs' });
+    throw error;
+  }
   console.log('Scan complete:', { status: result.status, newJobsFound: result.newJobsFound });
   process.exit(0);
 }

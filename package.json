@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "test:discord": "node src/testDiscord.js",
     "poll": "node src/scrapers/manualPoll.js",
-    "test": "node --test src/testDashboard.js src/testPreferences.js"
+    "test": "node --test src/testDashboard.js src/testPreferences.js src/testCloud.js"
   },
   "keywords": [
     "job-scraper",

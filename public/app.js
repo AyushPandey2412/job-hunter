@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadJobs();
   loadCompanies();
   loadScheduler();
-  setInterval(() => { loadJobs(); loadScheduler(); }, 60000);
+
   initSSE();
   setupEventListeners();
 });
@@ -218,9 +218,12 @@ function initGrid() {
   });
 }
 function renderJobs(jobs) { gridApi?.setGridOption('rowData', jobs || []); }
+let cloudWorkflowUrl = null;
 async function loadScheduler() {
   try {
     const response = await fetch('/api/scheduler'); const state = await response.json();
+    cloudWorkflowUrl = state.workflowUrl || null;
+    btnScanNow.title = cloudWorkflowUrl ? 'Open GitHub to run a scan' : 'Scan now';
     document.getElementById('engineStatus').textContent = state.running ? 'Scanning job boards…' : `Every ${state.intervalMinutes} min · ${state.error ? 'Last scan failed' : state.lastCompletedAt ? 'Last scan ' + formatTimeAgo(state.lastCompletedAt) : 'Waiting for first scan'}`;
     btnScanNow.disabled = state.running; scanIcon.classList.toggle('fa-spin', state.running);
   } catch {}
@@ -347,6 +350,7 @@ function setupEventListeners() {
 
   // Scan Now
   btnScanNow.addEventListener('click', async () => {
+    if (cloudWorkflowUrl) { window.open(cloudWorkflowUrl, '_blank', 'noopener,noreferrer'); return; }
     btnScanNow.disabled = true;
     scanIcon.classList.add('fa-spin');
 

@@ -3,7 +3,15 @@ const router = express.Router();
 const dbService = require('../../db/database');
 const scheduler = require('../../services/scheduler');
 scheduler.onComplete = result => broadcastEvent('scan_completed', { newJobsFound: result.newJobsFound });
-router.get('/scheduler', async (req, res) => res.json({ success: true, ...scheduler.status() }));
+router.get('/scheduler', async (req, res) => {
+  if (!process.env.VERCEL) return res.json({ success: true, ...scheduler.status() });
+  await preferences.ready;
+  await preferences.refresh();
+  const state = await require('../../services/cloudScanState').get();
+  const started = Date.parse(state.lastStartedAt || '');
+  const running = Number.isFinite(started) && started > Date.parse(state.lastCompletedAt || '1970-01-01') && Date.now() - started < 10 * 60000;
+  res.json({ success: true, ...state, running, intervalMinutes: preferences.get().pollIntervalMinutes, mode: 'github-actions', workflowUrl: 'https://github.com/AyushPandey2412/job-hunter/actions/workflows/job-cron.yml' });
+});
 router.get('/health', async (req, res) => res.json({ success: true }));
 const preferences = require('../../services/preferences');
 router.use(async (req, res, next) => { try { await preferences.ready; await preferences.refresh(); next(); } catch (error) { next(error); } });
