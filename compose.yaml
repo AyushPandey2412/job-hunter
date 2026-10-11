@@ -1,0 +1,14 @@
+services:
+  jobhunter:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DB_PATH: /app/data/jobs.db
+    volumes:
+      - jobhunter-data:/app/data
+volumes:
+  jobhunter-data:

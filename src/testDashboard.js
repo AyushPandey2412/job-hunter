@@ -1,0 +1,43 @@
+const assert = require('node:assert/strict');
+const config = require('./config');
+config.dbPath = ':memory:';
+const db = require('./db/database');
+const filter = require('./services/filterService');
+(async () => {
+await db.ready;
+const insert = (key, postedAt) => db.insertJob({ fingerprint: key, company: 'Test', title: 'Frontend Developer', url: `https://example.com/${key}`, source: 'test', postedAt });
+await insert('fresh', new Date().toISOString());
+await insert('old', new Date(Date.now() - 4 * 86400000).toISOString());
+await db.db.prepare("UPDATE jobs SET posted_at = NULL, discovered_at = datetime('now', '-4 days') WHERE fingerprint = 'old'").run();
+assert.equal((await db.getJobs({ age: 'recent' })).length, 1);
+assert.equal((await db.getJobs({ age: 'older' })).length, 1);
+const job = (await db.getJobs({ age: 'older' }))[0];
+await db.updateJobStatus(job.id, 'applied');
+await db.updateJobStatus(job.id, 'applied');
+assert.equal((await db.getJobs({ status: 'applied' })).length, 1);
+assert.equal((await db.db.prepare('SELECT COUNT(*) AS n FROM applications').get()).n, 1);
+assert.equal(await db.updateJobStatus(99999, 'applied'), false);
+config.filters.targetKeywords = ['node.js', 'next.js', 'c++'];
+config.filters.targetRoles = ['frontend'];
+config.filters.targetLocations = ['pune'];
+const evaluation = filter.evaluate({ title: 'Frontend Developer', location: 'Pune', snippet: 'Junior developer using node.js next.js c++' });
+assert.equal(evaluation.matched, true);
+assert.deepEqual(evaluation.matchedSkills, ['node.js', 'next.js', 'c++']);
+const scheduler = require('./services/scheduler');
+const coordinator = require('./scrapers');
+let finish;
+coordinator.runCycle = () => new Promise(resolve => { finish = resolve; });
+(async () => {
+  const first = scheduler.run();
+  assert.equal((await scheduler.run()).status, 'already_running');
+  finish({ status: 'complete' }); await first;
+  assert.equal(scheduler.status().running, false);
+  coordinator.runCycle = async () => { throw new Error('test failure'); };
+  await assert.rejects(scheduler.run(), /test failure/);
+  assert.equal(scheduler.status().running, false);
+  assert.equal(scheduler.status().error, 'test failure');
+  db.db.close();
+  console.log('PASS: age tabs, applied idempotency, keyword escaping, configured cities, scheduler overlap and recovery');
+})().catch(error => { console.error(error); process.exitCode = 1; });
+
+})().catch(error => { console.error(error); process.exitCode = 1; });

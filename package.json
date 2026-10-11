@@ -1,0 +1,40 @@
+{
+  "name": "job-hunter-autonomous",
+  "version": "1.0.0",
+  "description": "Autonomous Real-Time Job Detection, Discord Alerting, and Outreach Engine",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test:discord": "node src/testDiscord.js",
+    "poll": "node src/scrapers/manualPoll.js",
+    "test": "node --test src/testDashboard.js src/testPreferences.js"
+  },
+  "keywords": [
+    "job-scraper",
+    "ats",
+    "greenhouse",
+    "lever",
+    "ashby",
+    "discord-bot",
+    "auto-apply"
+  ],
+  "author": "Ayush",
+  "license": "ISC",
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "axios": "^1.7.9",
+    "bullmq": "^5.34.1",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

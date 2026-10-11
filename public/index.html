@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Hunter AI • Autonomous Discovery & Outreach Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/styles/ag-theme-quartz.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- TOP NAVIGATION -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Job Hunter <span class="badge-ai">AI</span></h1>
+          <div class="status-indicator">
+            <span class="pulse-dot"></span>
+            <span class="status-text" id="engineStatus">Real-time ATS Poller Active</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-secondary" id="btnFilterModal">
+          <i class="fa-solid fa-sliders"></i> Filter Rules
+        </button>
+        <button class="btn btn-secondary" id="btnDiscordModal">
+          <i class="fa-brands fa-discord"></i> Discord Alert Setup
+        </button>
+        <button class="btn btn-primary" id="btnScanNow">
+          <i class="fa-solid fa-arrows-rotate" id="scanIcon"></i> Scan ATS Now
+        </button>
+      </div>
+    </header>
+
+    <!-- METRICS & FUNNEL ANALYTICS BAR -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Clean Jobs Found</span>
+          <i class="fa-solid fa-database metric-icon icon-blue"></i>
+        </div>
+        <div class="metric-value" id="statTotal">0</div>
+        <div class="metric-subtext">0-3 Yrs • No Java/.NET</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">New Unreviewed</span>
+          <i class="fa-solid fa-sparkles metric-icon icon-purple"></i>
+        </div>
+        <div class="metric-value" id="statNew">0</div>
+        <div class="metric-subtext">Ready for 1st apply</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Applied</span>
+          <i class="fa-solid fa-paper-plane metric-icon icon-cyan"></i>
+        </div>
+        <div class="metric-value" id="statApplied">0</div>
+        <div class="metric-subtext">Auto & direct submissions</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Interview Calls</span>
+          <i class="fa-solid fa-trophy metric-icon icon-green"></i>
+        </div>
+        <div class="metric-value text-green" id="statInterview">0</div>
+        <div class="metric-subtext"><span id="statShortlistRate">0%</span> Shortlist Rate</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Rejected / Closed</span>
+          <i class="fa-solid fa-circle-xmark metric-icon icon-red"></i>
+        </div>
+        <div class="metric-value text-red" id="statRejected">0</div>
+        <div class="metric-subtext">Funnel learning data</div>
+      </div>
+    </section>
+
+    <!-- MAIN INTERFACE LAYOUT -->
+    <main class="main-layout">
+      <!-- LEFT / CENTER: JOBS FEED -->
+      <section class="feed-container">
+        <!-- POWERFUL MULTI-FILTER BAR -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search by role, company (e.g. Stripe, Full Stack, React, OpenAI)...">
+            <span class="badge-results-count" id="resultsCount">0 Jobs</span>
+          </div>
+
+          <!-- POWER DROPDOWNS -->
+          <div class="dropdown-filter-row">
+            <!-- CITY SELECTOR -->
+            <div class="select-group">
+              <label><i class="fa-solid fa-map-location-dot"></i> City / Mode</label>
+              <select id="selectCity">
+                <option value="all">All Cities & Remote</option>
+                <option value="remote">🌐 100% Remote Only</option>
+                <option value="bengaluru">📍 Bengaluru / Bangalore</option>
+                <option value="mumbai">📍 Mumbai / Navi Mumbai</option>
+                <option value="hyderabad">📍 Hyderabad</option>
+                <option value="delhi">📍 Noida / Delhi NCR</option>
+                <option value="pune">📍 Pune</option>
+              </select>
+            </div>
+
+            <!-- TECH STACK SELECTOR -->
+            <div class="select-group">
+              <label><i class="fa-solid fa-code"></i> Tech Stack</label>
+              <select id="selectStack">
+                <option value="all">All Tech Stacks</option>
+                <option value="react">React</option>
+                <option value="node">Node.js / Express</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="next">Next.js</option>
+                <option value="postgres">PostgreSQL / SQL</option>
+                <option value="docker">Docker / Cloud</option>
+              </select>
+            </div>
+
+            <!-- ROLE TYPE SELECTOR -->
+            <div class="select-group">
+              <label><i class="fa-solid fa-briefcase"></i> Job Role</label>
+              <select id="selectRole">
+                <option value="all">All Roles</option>
+                <option value="full stack">Full Stack Developer</option>
+                <option value="backend">Backend Engineer</option>
+                <option value="frontend">Frontend Developer</option>
+                <option value="software engineer">Software Engineer (SDE)</option>
+              </select>
+            </div>
+
+            <!-- COMPANY TIER SELECTOR -->
+            <div class="select-group">
+              <label><i class="fa-solid fa-building"></i> Company Type</label>
+              <select id="selectTier">
+                <option value="all">All Companies</option>
+                <option value="mnc">🏢 Indian & Global MNCs (TCS, Infosys, Stripe)</option>
+                <option value="startup">🚀 Tech Startups (Vercel, OpenAI, Supabase)</option>
+              </select>
+            </div>
+
+            <!-- SORT SELECTOR -->
+            <div class="select-group">
+              <label><i class="fa-solid fa-arrow-down-wide-short"></i> Sort Order</label>
+              <div class="sort-control-wrapper">
+                <select id="selectSort">
+                  <option value="newest" selected>Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="score">Highest match</option>
+                  <option value="score_asc">Lowest match</option>
+                  <option value="company_asc">🏢 Company (A → Z)</option>
+                  <option value="company_desc">🏢 Company (Z → A)</option>
+                </select>
+                <button type="button" class="btn-sort-toggle" id="btnSortToggle" title="Toggle Ascending / Descending order">
+                  <i class="fa-solid fa-arrow-down-wide-short" id="sortToggleIcon"></i>
+                  <span id="sortToggleText">DESC</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- QUICK FILTER CHIPS -->
+          <div class="filter-chips">
+            <button class="chip active" data-filter="all">All</button>
+            <button class="chip" data-filter="remote"><i class="fa-solid fa-globe"></i> Remote</button>
+            <button class="chip" data-filter="bengaluru"><i class="fa-solid fa-map-pin"></i> Bengaluru</button>
+            <button class="chip" data-filter="mumbai"><i class="fa-solid fa-map-pin"></i> Mumbai</button>
+            <button class="chip" data-filter="hyderabad"><i class="fa-solid fa-map-pin"></i> Hyderabad</button>
+            <button class="chip" data-filter="delhi"><i class="fa-solid fa-map-pin"></i> Delhi/Noida</button>
+            <button class="chip" data-filter="mnc"><i class="fa-solid fa-building"></i> MNCs</button>
+            <button class="chip" data-filter="startup"><i class="fa-solid fa-rocket"></i> Startups</button>
+            <button class="chip" data-filter="applied">Applied</button>
+            <button class="chip" data-filter="interview">Interviews</button>
+          </div>
+        </div>
+
+        <div class="job-tabs" role="tablist" aria-label="Job age and applications">
+          <button class="job-tab active" role="tab" aria-selected="true" data-view="recent">Fresh · 3 days</button>
+          <button class="job-tab" role="tab" aria-selected="false" data-view="older">Older jobs</button>
+          <button class="job-tab" role="tab" aria-selected="false" data-view="applied">Applied</button>
+        </div>
+        <p class="helper-text">Age uses the source date, or discovery date when unavailable. Salary and work mode are shown only when reported. Tab counts include all stored jobs. Quick filters narrow the table. Swipe to see more columns.</p>
+        <p id="feedMessage" role="status" aria-live="polite"></p>
+        <!-- JOBS LIST VIEW -->
+        <div class="ag-theme-quartz-dark" id="jobsList">
+          <div class="loading-state">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <p>Loading real-time job listings...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: INTELLIGENCE & TRACKED BOARDS -->
+      <aside class="sidebar-container">
+        <!-- ATS RESUME MATCH WIDGET -->
+        <div class="sidebar-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-file-shield text-green"></i> Active Profile Rules</h3>
+          </div>
+          <div class="card-body">
+            <p class="helper-text">Target: <strong>0-3 Yrs Early Career</strong></p>
+            <div class="keyword-tags">
+              <span class="tag-pill tag-match">React</span>
+              <span class="tag-pill tag-match">Node.js</span>
+              <span class="tag-pill tag-match">TypeScript</span>
+              <span class="tag-pill tag-match">Python</span>
+              <span class="tag-pill tag-match">Next.js</span>
+              <span class="tag-pill tag-match">Express</span>
+              <span class="tag-pill tag-match">PostgreSQL</span>
+              <span class="tag-pill tag-match">MongoDB</span>
+            </div>
+
+            <div class="excluded-box">
+              <span class="excluded-title"><i class="fa-solid fa-ban text-red"></i> Blocked Keywords:</span>
+              <div class="excluded-tags">
+                <span class="tag-pill tag-blocked">Java / Spring</span>
+                <span class="tag-pill tag-blocked">.NET / C#</span>
+                <span class="tag-pill tag-blocked">Senior / Staff</span>
+                <span class="tag-pill tag-blocked">4+ Years Exp</span>
+              </div>
+            </div>
+
+            <div class="tip-box">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span>Jobs with <strong>80%+ match</strong> trigger priority alerts straight to Discord!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRACKED COMPANIES -->
+        <div class="sidebar-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-building"></i> Tracked ATS Boards</h3>
+            <span class="badge-count" id="companiesCount">56 Boards</span>
+          </div>
+          <div class="card-body">
+            <p class="helper-text">Direct API monitoring without captchas:</p>
+            <div class="company-cloud" id="companyCloud">
+              <!-- Loaded via JavaScript -->
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- DISCORD MODAL -->
+  <div class="modal-backdrop" id="discordModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-brands fa-discord text-purple"></i> Discord Alert Integration</h3>
+        <button class="btn-close" id="btnCloseDiscordModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Paste your Discord Webhook URL below to test sending real-time job cards directly into your Discord channel:</p>
+        <div class="input-group">
+          <label>Discord Webhook URL</label>
+          <input type="password" id="webhookInput" autocomplete="off" placeholder="https://discord.com/api/webhooks/...">
+        </div>
+        <div id="testResult" class="test-result"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancelModal">Close</button>
+        <button class="btn btn-primary" id="btnSendTestWebhook">Save &amp; send test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER RULES MODAL -->
+  <div class="modal-backdrop" id="filterModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders text-blue"></i> Filter Rules & Targeting</h3>
+        <button class="btn-close" id="btnCloseFilterModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label>Allowed Experience</label>
+          <input type="text" value="0-2 Years, Maximum 3 Years (Fresher, Junior, SDE 1)" readonly>
+        </div>
+        <div class="input-group">
+          <label>Target Cities & Mode</label>
+          <input type="text" value="100% Remote, Bengaluru, Mumbai, Hyderabad, Noida, Delhi NCR" readonly>
+        </div>
+        <div class="input-group">
+          <label>Strictly Blocked / Excluded</label>
+          <input type="text" value="Java, Spring, SpringBoot, .NET, C#, Senior, Staff, Lead, 4+ Years" readonly>
+        </div>
+        <p class="helper-text" style="margin-top: 10px;">To add custom keywords or edit parameters permanently, you can update <code>JobHunter/.env</code> anytime!</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btnCloseFilterModalBtn">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+  <script src="preferences.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
