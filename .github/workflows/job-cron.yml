@@ -21,6 +21,7 @@ jobs:
       - run: npm ci --omit=dev
       - run: node src/scrapers/manualPoll.js
         env:
+          SCAN_FORCE: ${{ github.event_name == 'workflow_dispatch' }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
