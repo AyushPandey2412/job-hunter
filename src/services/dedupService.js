@@ -4,6 +4,7 @@ const dbService = require('../db/database');
 class DedupService {
   constructor() {
     this.memoryCache = new Set();
+    this.storedFingerprints = null;
   }
 
   /**
@@ -21,7 +22,7 @@ class DedupService {
     if (this.memoryCache.has(fingerprint)) {
       return true;
     }
-    const existsInDb = await dbService.hasJob(fingerprint);
+    const existsInDb = this.storedFingerprints ? this.storedFingerprints.has(fingerprint) : await dbService.hasJob(fingerprint);
     if (existsInDb) {
       this.memoryCache.add(fingerprint);
       return true;
@@ -32,6 +33,16 @@ class DedupService {
   /**
    * Marks job as seen
    */
+  preload(fingerprints) {
+    this.storedFingerprints = new Set(fingerprints);
+    this.memoryCache.clear();
+  }
+
+  markStored(fingerprint) {
+    this.storedFingerprints?.add(fingerprint);
+    this.markSeen(fingerprint);
+  }
+
   markSeen(fingerprint) {
     this.memoryCache.add(fingerprint);
   }

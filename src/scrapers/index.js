@@ -35,7 +35,7 @@ class ScraperCoordinator {
 
       // Deduplication check
       if (await dedupService.isDuplicate(fingerprint)) {
-        await dbService.enrichJob({ ...job, fingerprint });
+        if (!dedupService.storedFingerprints || dedupService.storedFingerprints.has(fingerprint)) await dbService.enrichJob({ ...job, fingerprint });
         continue;
       }
 
@@ -51,7 +51,7 @@ class ScraperCoordinator {
 
         const inserted = await dbService.insertJob(job);
         if (inserted) {
-          dedupService.markSeen(fingerprint);
+          dedupService.markStored(fingerprint);
           stats.newFound++;
           discoveredList.push(job);
 
@@ -89,6 +89,7 @@ class ScraperCoordinator {
     const config = require('../config');
     const configMap = new Map(config.companies.map(c => [c.token, c]));
     const dbCompanies = await dbService.getCompanies();
+    dedupService.preload(await dbService.getFingerprints());
 
     const stats = {
       totalChecked: 0,

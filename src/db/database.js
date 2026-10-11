@@ -178,6 +178,8 @@ const dbService = {
     }
   },
 
+  async getFingerprints() { return (await db.prepare('SELECT fingerprint FROM jobs').all()).map(row => row.fingerprint); },
+
   async hasJob(fingerprint) {
     const stmt = db.prepare('SELECT id FROM jobs WHERE fingerprint = ? LIMIT 1');
     const row = await stmt.get(fingerprint);
