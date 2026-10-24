@@ -8,7 +8,8 @@
     "dev": "nodemon index.js",
     "test:discord": "node src/testDiscord.js",
     "poll": "node src/scrapers/manualPoll.js",
-    "test": "node --test src/testDashboard.js src/testPreferences.js src/testCloud.js"
+    "test": "node --test src/testDashboard.js src/testPreferences.js src/testCloud.js src/testMatching.js src/testDiscovery.js src/testOutreach.js",
+    "test:eligibility": "node --test src/testEligibility.js"
   },
   "keywords": [
     "job-scraper",
@@ -29,7 +30,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "nodemailer": "^8.0.11"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
