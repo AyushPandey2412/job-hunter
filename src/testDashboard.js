@@ -20,7 +20,7 @@ assert.equal(await db.updateJobStatus(99999, 'applied'), false);
 config.filters.targetKeywords = ['node.js', 'next.js', 'c++'];
 config.filters.targetRoles = ['frontend'];
 config.filters.targetLocations = ['pune'];
-const evaluation = filter.evaluate({ title: 'Frontend Developer', location: 'Pune', snippet: 'Junior developer using node.js next.js c++' });
+const evaluation = filter.evaluate({ title: 'Frontend Developer', location: 'Pune', snippet: 'Junior developer using node.js next.js c++; minimum 1 year of experience developing applications.' });
 assert.equal(evaluation.matched, true);
 assert.deepEqual(evaluation.matchedSkills, ['node.js', 'next.js', 'c++']);
 const scheduler = require('./services/scheduler');

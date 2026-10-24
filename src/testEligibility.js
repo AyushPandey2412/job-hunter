@@ -1,0 +1,12 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const gate=require('./services/candidateEligibility');
+const now=new Date('2026-10-24T10:00:00Z');
+const job={title:'Frontend Developer',location:'Mumbai',snippet:'Required qualifications: React and TypeScript; minimum 1 year of experience developing web applications.',detailsComplete:true};
+test('accepts genuine junior core-stack requirements',()=>assert.equal(gate.assess(job,now),null));
+test('rejects .NET even when React is mentioned',()=>assert.equal(gate.assess({...job,snippet:'Required: .NET and C# with React frontend; minimum 1 year of experience.'},now).matchQuality,'excluded'));
+test('rejects three-year and experience-first requirements',()=>{for(const s of ['React; 3+ years of experience','React; Experience: 5 years','React; minimum 2 years required'])assert.equal(gate.assess({...job,snippet:s},now).matched,false)});
+test('unknown experience is review not matched',()=>{const r=gate.assess({...job,snippet:'React application developer'},now);assert.equal(r.matched,false);assert.equal(r.review,true)});
+test('SQL alone is not core-stack evidence',()=>assert.equal(gate.assess({...job,snippet:'Required SQL and Git; minimum 1 year experience with databases'},now).matchQuality,'excluded'));
+test('only Mumbai/Pune geography',()=>{for(const location of ['Bengaluru','India','Remote USA','Hyderabad'])assert.equal(gate.assess({...job,location},now).matchQuality,'excluded');assert.equal(gate.assess({...job,location:'Pune'},now),null)});
+test('preferred Java does not block core required stack',()=>assert.equal(gate.assess({...job,snippet:job.snippet+' Preferred qualifications: Java'},now),null));
+test('mandatory Java with React is rejected; alternatives permitted',()=>{assert.equal(gate.assess({...job,snippet:'Required React and Java; 1 year experience'},now).matchQuality,'excluded');assert.equal(gate.assess({...job,snippet:'Required React or Java; 1 year experience building applications'},now),null)});
+test('senior and Engineer II rejected',()=>{for(const title of ['Senior React Developer','Software Engineer II'])assert.equal(gate.assess({...job,title},now).matchQuality,'excluded')});
