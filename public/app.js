@@ -90,6 +90,8 @@ async function loadJobs() {
   try {
     const version = ++requestVersion;
     let url = `/api/jobs?limit=1000`;
+    const quality = document.getElementById('matchQuality')?.value;
+    if (quality && quality !== 'all') url += `&matchQuality=${encodeURIComponent(quality)}`;
     if (currentView === 'applied') url += '&status=applied';
     else if (currentView === 'recent' || currentView === 'older') url += `&age=${currentView}`;
     else if (currentView === 'saved') url += '&savedOnly=true';
@@ -197,7 +199,14 @@ function initGrid() {
       { field: 'salary_max', headerName: 'Salary maximum', hide: true },
       { field: 'salary_currency', headerName: 'Currency', hide: true },
       { field: 'salary_period', headerName: 'Pay period', hide: true },
-      { field: 'match_score', headerName: 'Match', minWidth: 110, valueFormatter: p => `${p.value}%` },
+      { field: 'match_quality', headerName: 'Match quality', minWidth: 180, valueFormatter: p => ({strong:'Strong match',possible:'Possible match','insufficient-details':'Review: missing details',excluded:'Outside preferences'}[p.value] || 'Not assessed') },
+      { field: 'match_reasons', headerName: 'Why it matches', minWidth: 320, wrapText: true, autoHeight: true, valueFormatter: p => { try { return JSON.parse(p.value || '[]').join(' · '); } catch { return ''; } } },
+      { field: 'match_score', headerName: 'Preference score', minWidth: 150, valueFormatter: p => `${p.value || 0}/100` },
+      { field: 'availability', headerName: 'Link status', minWidth: 170, cellRenderer: p => {
+        const button = document.createElement('button'); button.className = 'btn-status';
+        button.textContent = ({listed:'Listed at source',reachable:'Link reachable',closed:'Closed',unknown:'Check link'}[p.value] || 'Check link');
+        button.onclick = async () => { button.disabled = true; try { const response = await fetch(`/api/jobs/${p.data.id}/verify`,{method:'POST'}); const result = await response.json(); if (!response.ok) throw new Error(result.error); loadJobs(); } catch (error) { document.getElementById('feedMessage').textContent = error.message; } finally { button.disabled = false; } }; return button;
+      } },
       { field: 'tech_stack', headerName: 'Skills', minWidth: 210, valueFormatter: p => (p.value || []).join(', ') },
       { headerName: 'Posted / found', colId: 'age', minWidth: 150, valueGetter: p => p.data.posted_at || p.data.discovered_at, valueFormatter: p => formatTimeAgo(p.value) },
       { field: 'status', headerName: 'Status', minWidth: 150, cellRenderer: p => {
@@ -210,6 +219,10 @@ function initGrid() {
         button.onclick = async () => { button.disabled = true; try { await saveJobDetails(p.data, { saved: !p.data.saved }); } catch (error) { document.getElementById('feedMessage').textContent = error.message; } finally { button.disabled = false; } }; return button;
       } },
       { headerName: 'Notes', colId: 'notes', minWidth: 120, sortable: false, filter: false, cellRenderer: notesRenderer },
+      { headerName: 'Recruiter', colId: 'recruiter', minWidth: 160, sortable: false, filter: false, cellRenderer: p => {
+        const button = document.createElement('button'); button.className = 'btn-status'; button.textContent = 'Find recruiter';
+        button.onclick = () => window.openRecruiter(p.data); return button;
+      } },
       { headerName: 'Track', colId: 'actions', minWidth: 150, sortable: false, filter: false, cellRenderer: p => {
         const button = document.createElement('button'); button.className = 'btn-apply'; button.textContent = p.data.status === 'applied' ? 'Applied ✓' : 'Mark applied';
         button.disabled = p.data.status === 'applied'; button.onclick = async () => { button.disabled = true; await updateStatus(p.data.id, 'applied'); button.disabled = p.data.status === 'applied'; }; return button;
@@ -220,12 +233,34 @@ function initGrid() {
 function renderJobs(jobs) { gridApi?.setGridOption('rowData', jobs || []); }
 let cloudWorkflowUrl = null;
 async function loadScheduler() {
+  loadDiscoveryReport();
   try {
     const response = await fetch('/api/scheduler'); const state = await response.json();
     cloudWorkflowUrl = state.workflowUrl || null;
     btnScanNow.title = cloudWorkflowUrl ? 'Open GitHub to run a scan' : 'Scan now';
     document.getElementById('engineStatus').textContent = state.running ? 'Scanning job boards…' : `Every ${state.intervalMinutes} min · ${state.error ? 'Last scan failed' : state.lastCompletedAt ? 'Last scan ' + formatTimeAgo(state.lastCompletedAt) : 'Waiting for first scan'}`;
     btnScanNow.disabled = state.running; scanIcon.classList.toggle('fa-spin', state.running);
+  } catch {}
+}
+async function loadDiscoveryReport() {
+  try {
+    const response = await fetch('/api/discovery-report');
+    if (!response.ok) return;
+    const { report } = await response.json();
+    if (!report.sources) return;
+    document.getElementById('discoverySummary').textContent = `Last scan: ${report.totalJobsChecked} listings checked · ${report.newJobsFound} new matches · ${report.failedSources} sources failed`;
+    const container = document.getElementById('discoverySources');
+    container.replaceChildren();
+    for (const source of report.sources) {
+      const row = document.createElement('details');
+      const title = document.createElement('summary');
+      title.textContent = `${source.name}: ${source.status} · ${source.totalChecked} checked · ${source.newFound} new · ${source.duplicates || 0} duplicates · ${source.rejected || 0} rejected${source.truncated ? ' · scan limit reached' : ''}`;
+      row.append(title);
+      const text = document.createElement('p');
+      text.textContent = [source.error, ...(source.warnings || []), ...Object.entries(source.rejectionReasons || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([reason, count]) => `${count}: ${reason}`)].filter(Boolean).join(' | ');
+      row.append(text);
+      container.append(row);
+    }
   } catch {}
 }
 

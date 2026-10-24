@@ -42,7 +42,15 @@
       </div>
     </header>
 
+    <details class="discovery-report" id="discoveryReport">
+      <summary id="discoverySummary">Source coverage: waiting for scan</summary>
+      <div id="discoverySources"></div>
+    </details>
+
     <!-- METRICS & FUNNEL ANALYTICS BAR -->
+    <label class="quality-filter" for="matchQuality">Match quality
+      <select id="matchQuality"><option value="all">All matches and review candidates</option><option value="strong">Strong matches</option><option value="possible">Possible matches</option><option value="insufficient-details">Missing details — review</option></select>
+    </label>
     <section class="metrics-grid">
       <div class="metric-card">
         <div class="metric-header">
@@ -50,7 +58,7 @@
           <i class="fa-solid fa-database metric-icon icon-blue"></i>
         </div>
         <div class="metric-value" id="statTotal">0</div>
-        <div class="metric-subtext">0-3 Yrs • No Java/.NET</div>
+        <div class="metric-subtext">Junior JS/TS · Mumbai/Pune</div>
       </div>
 
       <div class="metric-card">
@@ -68,7 +76,7 @@
           <i class="fa-solid fa-paper-plane metric-icon icon-cyan"></i>
         </div>
         <div class="metric-value" id="statApplied">0</div>
-        <div class="metric-subtext">Auto & direct submissions</div>
+        <div class="metric-subtext">Manually recorded applications</div>
       </div>
 
       <div class="metric-card">
@@ -214,7 +222,7 @@
             <h3><i class="fa-solid fa-file-shield text-green"></i> Active Profile Rules</h3>
           </div>
           <div class="card-body">
-            <p class="helper-text">Target: <strong>0-3 Yrs Early Career</strong></p>
+            <p class="helper-text">Target: <strong>Junior roles within dated experience</strong></p>
             <div class="keyword-tags">
               <span class="tag-pill tag-match">React</span>
               <span class="tag-pill tag-match">Node.js</span>
@@ -232,13 +240,13 @@
                 <span class="tag-pill tag-blocked">Java / Spring</span>
                 <span class="tag-pill tag-blocked">.NET / C#</span>
                 <span class="tag-pill tag-blocked">Senior / Staff</span>
-                <span class="tag-pill tag-blocked">4+ Years Exp</span>
+                <span class="tag-pill tag-blocked">Excess required experience</span>
               </div>
             </div>
 
             <div class="tip-box">
               <i class="fa-solid fa-lightbulb"></i>
-              <span>Jobs with <strong>80%+ match</strong> trigger priority alerts straight to Discord!</span>
+              <span>Eligible matches can trigger Discord alerts. Missing requirements need review.</span>
             </div>
           </div>
         </div>
@@ -296,11 +304,11 @@
         </div>
         <div class="input-group">
           <label>Target Cities & Mode</label>
-          <input type="text" value="100% Remote, Bengaluru, Mumbai, Hyderabad, Noida, Delhi NCR" readonly>
+          <input type="text" value="Mumbai, Pune (including Mumbai metro)" readonly>
         </div>
         <div class="input-group">
           <label>Strictly Blocked / Excluded</label>
-          <input type="text" value="Java, Spring, SpringBoot, .NET, C#, Senior, Staff, Lead, 4+ Years" readonly>
+          <input type="text" value="Mandatory Java/.NET/C#, senior roles, experience above candidate level" readonly>
         </div>
         <p class="helper-text" style="margin-top: 10px;">To add custom keywords or edit parameters permanently, you can update <code>JobHunter/.env</code> anytime!</p>
       </div>
@@ -313,5 +321,6 @@
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
   <script src="preferences.js"></script>
   <script src="app.js"></script>
+  <script src="outreach.js"></script>
 </body>
 </html>

@@ -35,6 +35,8 @@ module.exports = {
     next.minMatchScore = Number(input.minMatchScore);
     if (!Number.isInteger(next.freshDays) || next.freshDays < 1 || next.freshDays > 365 || ![5, 10].includes(next.pollIntervalMinutes) || !Number.isFinite(next.minMatchScore) || next.minMatchScore < 0 || next.minMatchScore > 100) throw new Error('Invalid age, interval or score');
     await service.db.prepare('INSERT INTO preferences VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET value = excluded.value').run(JSON.stringify(next));
+    // Re-evaluate unchanged boards after filters change; their ETags only track source changes.
+    await service.db.exec('UPDATE companies SET last_etag = NULL');
     current = next; apply(); return this.get();
   }
 };

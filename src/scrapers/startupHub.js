@@ -7,6 +7,7 @@ class StartupHubScraper {
    * Focuses on modern tech stacks: React, Node.js, TypeScript, Python, Full Stack.
    */
   async fetchJobs() {
+    const warnings = [];
     const jobs = [];
 
     // 1. RemoteOK High-Tech Startup API
@@ -35,6 +36,7 @@ class StartupHubScraper {
         }
       }
     } catch (e) {
+      warnings.push(e.message);
       console.warn('⚠️ [StartupHub] Error fetching RemoteOK feed:', e.message);
     }
 
@@ -75,6 +77,7 @@ class StartupHubScraper {
         }
       });
     } catch (e) {
+      warnings.push(e.message);
       console.warn('⚠️ [StartupHub] Error fetching WWR feed:', e.message);
     }
 
@@ -102,6 +105,7 @@ class StartupHubScraper {
         }
       }
     } catch (e) {
+      warnings.push(e.message);
       console.warn('⚠️ [StartupHub] Error fetching Himalayas feed:', e.message);
     }
 
@@ -128,6 +132,7 @@ class StartupHubScraper {
         }
       }
     } catch (e) {
+      warnings.push(e.message);
       console.warn('⚠️ [StartupHub] Error fetching Jobicy feed:', e.message);
     }
 
@@ -154,11 +159,13 @@ class StartupHubScraper {
         }
       }
     } catch (e) {
+      warnings.push(e.message);
       console.warn('⚠️ [StartupHub] Error fetching Remotive feed:', e.message);
     }
 
     return {
       modified: true,
+      warnings,
       jobs
     };
   }

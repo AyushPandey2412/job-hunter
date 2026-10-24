@@ -21,6 +21,7 @@ async function main() {
   let result;
   try {
     result = await scraperCoordinator.runCycle();
+    await require('../services/outreach').drainApproved();
     if (cloud) await cloud.save({ ...state, lastCompletedAt: new Date().toISOString(), newJobsFound: result.newJobsFound });
   } catch (error) {
     if (cloud) await cloud.save({ ...state, lastCompletedAt: new Date().toISOString(), error: 'Scan failed; check GitHub Actions logs' });

@@ -963,3 +963,20 @@ button:disabled { opacity: .6; cursor: default; }
   .filter-bar > .dropdown-filter-row, .filter-bar #extraFilters { grid-template-columns: minmax(0, 1fr); }
   .filter-actions { align-items: flex-start; flex-direction: column; }
 }
+/* Source coverage and rejection reasons remain available alongside results. */
+.discovery-report { margin: 16px 0; padding: 12px 16px; border: 1px solid #454b63; border-radius: 10px; }
+.discovery-report summary { cursor: pointer; }
+.discovery-report details { margin-top: 10px; }
+.discovery-report p { margin: 6px 0 12px; font-size: 13px; overflow-wrap: anywhere; }
+.quality-filter { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.quality-filter select { max-width: 330px; padding: 8px; }
+.outreach-dialog { width: min(760px, 95vw); max-height: 90dvh; overflow: auto; padding: 24px; border: 1px solid #454b63; border-radius: 14px; background: #111827; color: #f1f5f9; }
+.outreach-dialog::backdrop { background: #000a; }
+.outreach-dialog h2 { font-size: 19px; margin: 12px 0; }
+.outreach-dialog label { display: block; margin: 12px 0; }
+.outreach-dialog input, .outreach-dialog select, .outreach-dialog textarea { display: block; width: 100%; margin-top: 6px; padding: 10px; background: #1e293b; color: #f1f5f9; border: 1px solid #475569; border-radius: 6px; box-sizing: border-box; }
+.outreach-links { margin: 14px 0; }
+.outreach-links a { color: #93c5fd; }
+.outreach-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.outreach-close { float: right; }
+#outreachHistory button { display: block; margin-top: 8px; white-space: normal; }

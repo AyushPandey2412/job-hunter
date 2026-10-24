@@ -26,6 +26,8 @@ router.get('/view-counts', async (req, res) => {
   res.json({ success: true, freshDays: days, counts });
 });
 router.get('/settings', async (req, res) => res.json({ success: true, settings: preferences.get() }));
+router.use(require('./outreach'));
+router.get('/discovery-report', async (req, res) => res.json({ success: true, report: await require('../../services/scanReport').get() }));
 router.put('/settings', async (req, res) => {
   try {
     const settings = await preferences.save(req.body);
@@ -77,7 +79,7 @@ router.get('/jobs', async (req, res) => {
       sortBy,
       order,
       minScore, age, freshDays: preferences.get().freshDays,
-      company: req.query.company,
+      company: req.query.company, matchQuality: req.query.matchQuality,
       cities: String(req.query.cities || '').split(',').filter(Boolean),
       workModes: String(req.query.workModes || '').split(',').filter(Boolean),
       salaryMin: req.query.salaryMin === undefined ? null : Number(req.query.salaryMin),

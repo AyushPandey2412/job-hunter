@@ -7,3 +7,10 @@ data/
 *.log
 .DS_Store
 coverage/
+tmp/
+
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-*
+python/profile.local.json

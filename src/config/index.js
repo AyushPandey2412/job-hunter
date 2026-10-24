@@ -32,7 +32,7 @@ module.exports = {
       .split(',')
       .map(s => s.trim().toLowerCase())
       .filter(Boolean),
-    targetLocations: (process.env.TARGET_LOCATIONS || '')
+    targetLocations: (process.env.TARGET_LOCATIONS || 'mumbai,pune')
       .split(',')
       .map(s => s.trim().toLowerCase())
       .filter(Boolean),

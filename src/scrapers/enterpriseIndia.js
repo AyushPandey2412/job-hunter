@@ -52,7 +52,7 @@ class EnterpriseIndiaScraper {
             source: 'linkedin-guest',
             tier: 'mnc',
             isRemote,
-            snippet: `${title} at ${companyName} (${location}). Filtered for 0-3 years experience in ${chosenLoc}.`,
+            snippet: `${title} at ${companyName} (${location}).`,
             postedAt: $(item).find('time').attr('datetime') || null
           });
         }
@@ -64,7 +64,7 @@ class EnterpriseIndiaScraper {
       };
     } catch (err) {
       console.warn(`⚠️ [Enterprise India] Error fetching ${company.name} (${chosenLoc}):`, err.message);
-      return { modified: false, jobs: [] };
+      return { modified: false, jobs: [], error: err.message };
     }
   }
 }

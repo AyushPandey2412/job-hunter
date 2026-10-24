@@ -7,6 +7,7 @@ class InstahyreScraper {
    * across target cities: Bangalore, Mumbai, Hyderabad, Noida, Delhi.
    */
   async fetchJobs() {
+    const warnings = [];
     const skillsToSearch = ['ReactJS', 'Node.js', 'Python', 'Frontend', 'Full Stack'];
     const locationsToSearch = ['Bangalore', 'Mumbai', 'Hyderabad', 'Noida', 'Delhi'];
     const allJobs = [];
@@ -55,6 +56,7 @@ class InstahyreScraper {
             });
           }
         } catch (err) {
+          warnings.push(err.message);
           // Silent catch to allow remaining queries to proceed
           continue;
         }
@@ -63,6 +65,7 @@ class InstahyreScraper {
 
     return {
       modified: true,
+      warnings,
       jobs: allJobs
     };
   }

@@ -15,12 +15,15 @@ class FilterService {
       return { allowed: false, expLabel: 'Senior / Staff / Lead Level (Excluded)', reason: 'Senior title' };
     }
 
-    // 2. High Years of Experience Detection in text (e.g. "4+ years", "5-7 years", "6 to 8 years")
-    const highExpRegex = /\b([4-9]|[1-2][0-9])\+?\s*(?:to|-|\b)\s*(?:[5-9]|[1-2][0-9])?\s*(?:years?|yrs?)\b/i;
-    const highMatch = text.match(highExpRegex);
-    if (highMatch) {
-      return { allowed: false, expLabel: `${highMatch[0]} (Excluded)`, reason: `Requires ${highMatch[0]}` };
+    // Match the minimum required experience, rather than a range's upper bound.
+    const requirements = text.matchAll(/(?<![\d.])\b(\d{1,2}(?:\.\d+)?)(?:\s*(?:-|\u2013|\u2014|to)\s*(\d{1,2}(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)\b[^.;\n]{0,100}?\bexperience\b/gi);
+    let reportedRequirement;
+    for (const match of requirements) {
+      if (Number(match[1]) > 3) return { allowed: false, expLabel: 'Above 3 years (Excluded)', reason: 'Requires ' + match[0] };
+      if (!reportedRequirement || Number(match[1]) > Number(reportedRequirement[1])) reportedRequirement = match;
     }
+    if (reportedRequirement) return { allowed: true,
+      expLabel: reportedRequirement[0], reason: 'Source reports compatible minimum experience' };
 
     // 3. Detect Entry / Junior / Early Career Patterns (0 - 3 years)
     const earlyPatterns = [
@@ -31,33 +34,37 @@ class FilterService {
     ];
 
     for (const pat of earlyPatterns) {
-      if (pat.regex.test(text)) {
+      if (pat.regex.test(pat.label.includes('Fresher') || pat.label.includes('Junior') ? title : text)) {
         return { allowed: true, expLabel: pat.label, reason: 'Matched early career criteria' };
       }
     }
 
     // Default: If title is generic "Software Engineer" / "Full Stack Developer" without senior keywords
-    return { allowed: true, expLabel: '0-3 Years (Early Career)', reason: 'Standard developer role' };
+    return { allowed: true, expLabel: 'Experience not specified', reason: 'No explicit early-career requirement' };
   }
 
   /**
    * Evaluates job details against user's target filters
    */
   evaluate(job) {
+    const eligibility = require('./candidateEligibility').assess(job);
+    if (eligibility) return eligibility;
     const title = (job.title || '').toLowerCase();
     const location = (job.location || '').toLowerCase();
     const snippet = (job.snippet || '').toLowerCase();
     const content = `${title} ${snippet} ${location}`;
 
     // 1. Strict Experience Filter (0 - 2 yrs, max 3 yrs)
-    const expResult = this.checkExperience(title, snippet);
+    const requirements = job.requiredQualifications ?? require('../scrapers/utils').sections(snippet).requiredQualifications;
+    const expResult = this.checkExperience(title, requirements);
     if (!expResult.allowed) {
       return { matched: false, reason: `Excluded by experience: ${expResult.reason}` };
     }
 
     // 2. Strict Java / .NET / C# Exclusion
-    const javaRegex = /\b(java(?!\s*script)|j2ee|spring|springboot|\.net|c#|csharp|cobol)\b/i;
-    if (javaRegex.test(title) || (javaRegex.test(snippet) && !snippet.toLowerCase().includes('javascript'))) {
+    const javaRegex = /(?:\b(?:java(?!\s*script)|j2ee|spring|springboot|csharp|cobol)\b|(?:^|[^a-z0-9])(?:\.net|c#)(?=$|[^a-z0-9]))/i;
+    const alternativeStack = /\b(?:javascript|typescript|react(?:js)?|node(?:js)?|python)\b|node\.js|react\.js/i.test(snippet);
+    if (javaRegex.test(title) || (javaRegex.test(snippet) && !alternativeStack)) {
       return { matched: false, reason: 'Excluded: Java / .NET / C# role' };
     }
 
@@ -72,7 +79,14 @@ class FilterService {
     // 3. Role Title Check
     let roleMatched = false;
     for (const role of config.filters.targetRoles) {
-      if (title.includes(role)) {
+      const roleAliases = {
+        'software engineer': ['software engineer', 'software development engineer'],
+        'software developer': ['software developer', 'application developer'],
+        'full stack': ['full stack', 'full-stack', 'fullstack'],
+        'frontend': ['frontend', 'front-end', 'front end'],
+        'backend': ['backend', 'back-end', 'back end']
+      };
+      if ((roleAliases[role] || [role]).some(value => keywordPattern(value).test(title))) {
         roleMatched = true;
         break;
       }
@@ -149,6 +163,10 @@ class FilterService {
       }
     }
 
+    if (config.filters.targetKeywords.length && !matchedSkills.length) {
+      return { matched: false, reason: 'No preferred tech stack found in source details' };
+    }
+
     // 6. Calculate Match Score (0 - 100)
     let score = 0;
     if (roleMatched) score += 35;
@@ -170,6 +188,25 @@ class FilterService {
       matchedSkills,
       reason: matched ? 'Meets match criteria' : `Low score (${score}/${config.filters.minMatchScore})`
     };
+  }
+
+  assess(job) {
+    const result = this.evaluate(job);
+    if (result.review) return result;
+    const reasons = [];
+    if (result.matchedSkills?.length) reasons.push(`Skills: ${result.matchedSkills.join(', ')}`);
+    if (result.normalizedLocation) reasons.push(`Location: ${job.location}`);
+    if (result.experienceLevel) reasons.push(`Experience: ${result.experienceLevel}`);
+    if (!result.matched) {
+      const insufficient = result.reason === 'No preferred tech stack found in source details' &&
+        (job.detailsComplete === false || (job.snippet || '').length < 80);
+      return { ...result, matchQuality: insufficient ? 'insufficient-details' : 'excluded',
+        review: insufficient, matchReasons: [result.reason] };
+    }
+    const unknown = result.experienceLevel === 'Experience not specified' || job.detailsComplete === false;
+    const matchQuality = !unknown && result.score >= 70 ? 'strong' : 'possible';
+    if (unknown) reasons.push('Confirm missing requirements on the employer page');
+    return { ...result, matchQuality, matchReasons: reasons };
   }
 }
 

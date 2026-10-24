@@ -1,54 +1,29 @@
-const axios = require('axios');
-
-class SmartRecruitersScraper {
-  /**
-   * Fetches job openings for SmartRecruiters public API
-   */
+const { axios, options, enrich, sections, listed } = require('./utils');
+module.exports = {
   async fetchJobs(company) {
-    const url = `https://api.smartrecruiters.com/v1/companies/${company.token}/postings?limit=30`;
-
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        },
-        timeout: 10000
-      });
-
-      const rawContent = response.data?.content || [];
-      const parsedJobs = rawContent.map(job => {
-        const locationCity = job.location?.city || '';
-        const locationCountry = job.location?.country || '';
-        const locationStr = [locationCity, locationCountry].filter(Boolean).join(', ') || 'Unspecified';
-        const isRemote =
-          !!job.location?.remote ||
-          locationStr.toLowerCase().includes('remote') ||
-          job.name.toLowerCase().includes('remote');
-
-        const directUrl = `https://jobs.smartrecruiters.com/${company.token}/${job.id}`;
-
-        return {
-          company: company.name,
-          title: job.name || '',
-          location: locationStr,
-          url: directUrl,
-          source: 'smartrecruiters',
-          tier: 'mnc',
-          isRemote,
-          snippet: `${job.name} at ${company.name}. Type: ${job.typeOfEmployment?.label || 'Full-time'}. Department: ${job.department?.label || 'Engineering'}`,
-          postedAt: job.releasedDate || new Date().toISOString()
-        };
-      });
-
-      return {
-        modified: true,
-        jobs: parsedJobs
-      };
-    } catch (err) {
-      console.warn(`⚠️ [SmartRecruiters] Error fetching ${company.name}:`, err.message);
-      return { modified: false, jobs: [] };
+    const jobs = [];
+    let total = 0;
+    const base = 'https://api.smartrecruiters.com/v1/companies/' + encodeURIComponent(company.token) + '/postings';
+    for (let offset = 0; offset < 5000; offset += 100) {
+      const { data } = await axios.get(base, { ...options, params: { limit: 100, offset, country: 'in' } });
+      if (!Array.isArray(data?.content)) throw new Error('Invalid SmartRecruiters search response');
+      total = Number(data.totalFound || 0);
+      for (const row of data.content) jobs.push({ company: company.name, title: row.name,
+        location: [row.location?.city, row.location?.country].filter(Boolean).join(', '),
+        url: 'https://jobs.smartrecruiters.com/' + company.token + '/' + row.id,
+        sourceJobId: String(row.id), source: 'smartrecruiters', tier: company.tier || 'mnc',
+        isRemote: !!row.location?.remote, snippet: '', detailsComplete: false,
+        postedAt: row.releasedDate || null, ...listed() });
+      if (!data.content.length || offset + data.content.length >= total) break;
     }
+    const result = await enrich(jobs, async job => {
+      const { data } = await axios.get(base + '/' + encodeURIComponent(job.sourceJobId), options);
+      const content = data?.jobAd?.sections;
+      if (!content) throw new Error('SmartRecruiters full requirements missing');
+      const result = sections(Object.values(content).map(s => (s.title || '') + '\n' + (s.text || '')).join('\n'));
+      if (content.qualifications?.text) result.requiredQualifications = sections(content.qualifications.text).requiredQualifications;
+      return result;
+    });
+    return { modified: true, ...result, totalAvailable: total, truncated: jobs.length < total };
   }
-}
-
-module.exports = new SmartRecruitersScraper();
+};
