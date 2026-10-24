@@ -107,8 +107,10 @@ async function initSchema() {
 const ready = (async () => {
 await initSchema();
 const additions = { work_mode: "TEXT DEFAULT 'unknown'", salary_min: 'REAL', salary_max: 'REAL', salary_currency: "TEXT DEFAULT ''", salary_period: "TEXT DEFAULT ''", saved: 'INTEGER DEFAULT 0', notes: "TEXT DEFAULT ''" };
+Object.assign(additions, { source_job_id: "TEXT DEFAULT ''", source_job_key: 'TEXT', match_quality: "TEXT DEFAULT 'possible'", match_reasons: "TEXT DEFAULT '[]'", required_qualifications: "TEXT DEFAULT ''", preferred_qualifications: "TEXT DEFAULT ''", availability: "TEXT DEFAULT 'unknown'", verified_at: 'TEXT' });
 const existing = new Set((await db.prepare('PRAGMA table_info(jobs)').all()).map(c => c.name));
 for (const [name, type] of Object.entries(additions)) if (!existing.has(name)) await db.exec(`ALTER TABLE jobs ADD COLUMN ${name} ${type}`);
+await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_source_key ON jobs(source_job_key) WHERE source_job_key IS NOT NULL');
 if (!existing.has('work_mode')) {
   for (const row of await db.prepare('SELECT * FROM jobs').all()) {
     const info = jobDetails({ location: row.location, title: row.title, snippet: row.description_snippet, isRemote: !!row.is_remote, salary: row.salary_range === 'Competitive' ? '' : row.salary_range });
@@ -133,9 +135,23 @@ const dbService = {
       WHERE fingerprint = ?`).run(info.workMode, info.workMode, info.salaryMin, info.salaryMax, info.salaryCurrency, info.salaryCurrency, info.salaryPeriod, info.salaryPeriod, info.salary, info.salary, info.salary, jobData.fingerprint);
   },
 
+  async updateDiscoveryDetails(id, job, key = require('../services/jobIdentity').identity(job)) {
+    await db.prepare(`UPDATE jobs SET source_job_id=?, source_job_key=?, match_quality=?, match_reasons=?,
+      required_qualifications=?, preferred_qualifications=?, availability=?, verified_at=COALESCE(?,verified_at),
+      description_snippet=CASE WHEN ? != '' THEN ? ELSE description_snippet END,
+      experience_level=COALESCE(?,experience_level), match_score=COALESCE(?,match_score) WHERE id=?`).run(
+      key.sourceJobId, key.sourceJobKey, job.matchQuality || 'possible', JSON.stringify(job.matchReasons || []),
+      job.requiredQualifications || '', job.preferredQualifications || '', job.availability || 'unknown', job.verifiedAt || null,
+      job.snippet || '', job.snippet || '', job.experienceLevel || null, job.matchScore ?? null, id);
+  },
+
   // Jobs
   async insertJob(jobData) {
     try {
+      const key = require('../services/jobIdentity').identity(jobData);
+      jobData.url = key.url;
+      const existingJob = await db.prepare('SELECT id FROM jobs WHERE source_job_key = ? OR job_url = ? LIMIT 1').get(key.sourceJobKey, key.url);
+      if (existingJob) { await this.updateDiscoveryDetails(existingJob.id, jobData, key); return false; }
       const stmt = db.prepare(`
         INSERT INTO jobs (
           fingerprint, company_name, title, location, is_remote,
@@ -158,16 +174,18 @@ const dbService = {
         jobData.source,
         jobData.tier || 'startup',
         JSON.stringify(jobData.techStack || []),
-        jobData.experienceLevel || '0-2 Yrs',
+        jobData.experienceLevel || 'Experience not specified',
         jobData.salary || 'Competitive',
         jobData.snippet || '',
         jobData.matchScore || 0,
         'new',
-        jobData.postedAt || new Date().toISOString()
+        jobData.postedAt || null
       );
 
       const info = jobDetails(jobData);
       await db.prepare('UPDATE jobs SET work_mode=?, salary_min=?, salary_max=?, salary_currency=?, salary_period=?, salary_range=? WHERE fingerprint=?').run(info.workMode, info.salaryMin, info.salaryMax, info.salaryCurrency, info.salaryPeriod, info.salary, jobData.fingerprint);
+      const stored = await db.prepare('SELECT id FROM jobs WHERE fingerprint = ?').get(jobData.fingerprint);
+      await this.updateDiscoveryDetails(stored.id, jobData, key);
       return true;
     } catch (err) {
       if (err.message.includes('UNIQUE constraint failed')) {
@@ -186,8 +204,8 @@ const dbService = {
     return !!row;
   },
 
-  async getJobs({ limit = 50, offset = 0, status, search, remoteOnly, tier, location, stack, role, sortBy = 'newest', order, minScore, age, freshDays = 3, company, cities = [], workModes = [], salaryMin, salaryMax, salaryCurrency, salaryPeriod, includeUnknownSalary = true, savedOnly } = {}) {
-    let query = 'SELECT * FROM jobs WHERE 1=1';
+  async getJobs({ limit = 50, offset = 0, status, search, remoteOnly, tier, location, stack, role, sortBy = 'newest', order, minScore, age, freshDays = 3, company, cities = [], workModes = [], salaryMin, salaryMax, salaryCurrency, salaryPeriod, includeUnknownSalary = true, savedOnly, matchQuality } = {}) {
+    let query = "SELECT * FROM jobs WHERE (match_quality != 'excluded' OR saved = 1 OR status != 'new') AND (availability != 'closed' OR saved = 1 OR status != 'new')";
     const params = [];
 
     if (age === 'recent' || age === 'older') {
@@ -195,6 +213,7 @@ const dbService = {
       params.push(`-${freshDays} days`);
     }
 
+    if (matchQuality && ['strong','possible','insufficient-details'].includes(matchQuality)) { query += ' AND match_quality = ?'; params.push(matchQuality); }
     if (company) { query += ' AND company_name = ?'; params.push(company); }
     if (savedOnly) query += ' AND saved = 1';
     if (cities.length) {
