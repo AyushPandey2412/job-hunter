@@ -46,7 +46,7 @@ class LeverScraper {
           source: 'lever',
           tier: company.tier,
           isRemote,
-          snippet: (post.descriptionPlain || ''),
+          snippet: [post.descriptionPlain, ...(post.lists || []).map(list => `${list.text || ''} ${require('cheerio').load(list.content || '').text()}`), post.additionalPlain].filter(Boolean).join(' '),
           postedAt: post.createdAt ? new Date(post.createdAt).toISOString() : new Date().toISOString()
         };
       });
@@ -58,10 +58,10 @@ class LeverScraper {
       };
     } catch (err) {
       if (err.response?.status === 404) {
-        return { modified: false, jobs: [] };
+        return { modified: false, jobs: [], error: err.message };
       }
       console.warn(`⚠️ [Lever] Error fetching ${company.name}:`, err.message);
-      return { modified: false, jobs: [] };
+      return { modified: false, jobs: [], error: err.message };
     }
   }
 }

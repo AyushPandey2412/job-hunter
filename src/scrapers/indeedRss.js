@@ -7,6 +7,7 @@ class IndeedRssScraper {
    * Gracefully handles 429 rate limits without blocking other scrapers.
    */
   async fetchJobs() {
+    const warnings = [];
     const jobs = [];
     const feedUrls = [
       'https://in.indeed.com/rss?q=react+developer&l=India',
@@ -51,6 +52,7 @@ class IndeedRssScraper {
           }
         });
       } catch (err) {
+          warnings.push(err.message);
         // Expected 429 or 403 on cloudflare/rate-limited environments
         // Silently skip so Instahyre and Direct ATS continue seamlessly
         continue;
@@ -59,6 +61,7 @@ class IndeedRssScraper {
 
     return {
       modified: true,
+      warnings,
       jobs
     };
   }

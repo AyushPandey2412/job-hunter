@@ -58,10 +58,10 @@ class AshbyScraper {
       };
     } catch (err) {
       if (err.response?.status === 404) {
-        return { modified: false, jobs: [] };
+        return { modified: false, jobs: [], error: err.message };
       }
       console.warn(`⚠️ [Ashby] Error fetching ${company.name}:`, err.message);
-      return { modified: false, jobs: [] };
+      return { modified: false, jobs: [], error: err.message };
     }
   }
 }

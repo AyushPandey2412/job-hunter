@@ -58,10 +58,10 @@ class GreenhouseScraper {
     } catch (err) {
       if (err.response?.status === 404) {
         // Board token might have changed or private
-        return { modified: false, jobs: [] };
+        return { modified: false, jobs: [], error: err.message };
       }
       console.warn(`⚠️ [Greenhouse] Error fetching ${company.name}:`, err.message);
-      return { modified: false, jobs: [] };
+      return { modified: false, jobs: [], error: err.message };
     }
   }
 }
