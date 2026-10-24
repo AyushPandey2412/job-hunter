@@ -4,6 +4,14 @@
  */
 
 module.exports = [
+  { name: 'Microsoft', token: 'microsoft', ats: 'microsoft', tier: 'mnc', domain: 'microsoft.com' },
+  { name: 'Google', token: 'google', ats: 'google', tier: 'mnc', domain: 'google.com' },
+  { name: 'Oracle', token: 'oracle', ats: 'oracle', tier: 'mnc', domain: 'oracle.com' },
+  { name: 'SAP', token: 'sap', ats: 'sap', tier: 'mnc', domain: 'sap.com' },
+  { name: 'Salesforce', token: 'salesforce', ats: 'workday', tier: 'mnc', domain: 'salesforce.com', workdayConfig: { host: 'salesforce.wd12.myworkdayjobs.com', tenant: 'salesforce', site: 'External_Career_Site' } },
+  { name: 'Cisco', token: 'cisco', ats: 'workday', tier: 'mnc', domain: 'cisco.com', workdayConfig: { host: 'cisco.wd5.myworkdayjobs.com', tenant: 'cisco', site: 'Cisco_Careers' } },
+  { name: 'IBM', token: 'ibm', ats: 'ibm', tier: 'mnc' },
+  { name: 'Amazon', token: 'amazon', ats: 'amazon', tier: 'mnc' },
   // =========================================================================
   // 🇮🇳 INDIAN IT & MANUFACTURING GIANTS (Filtered strictly for 0-3 Yrs)
   // =========================================================================
