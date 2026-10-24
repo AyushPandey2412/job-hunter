@@ -18,6 +18,11 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
+app.use('/api', (req,res,next) => {
+  if (['GET','HEAD','OPTIONS'].includes(req.method) || !req.headers.origin) return next();
+  try { if (new URL(req.headers.origin).host === req.headers.host) return next(); } catch {}
+  res.status(403).json({ success:false, error:'Cross-site requests are not allowed' });
+});
 
 // API endpoints
 app.use('/api', apiRoutes);
