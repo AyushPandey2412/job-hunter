@@ -21,6 +21,8 @@ See [deployment instructions](DEPLOYMENT.md). Vercel hosts the dashboard, Turso 
 
 The dashboard supports manual application tracking. It does not submit applications automatically.
 
-IBM and Amazon are scanned directly through their public career search feeds for India, with full descriptions and pagination (up to 5,000 listings per company per scan). Common titles such as Application Developer and Software Development Engineer map to the corresponding software role preferences. A source mentioning Java alongside React, Node or Python remains eligible unless the title specifically targets an excluded language. Jobs without stated experience are labeled as unknown.
+IBM and Amazon are scanned directly through their public career search feeds for India, with full descriptions and pagination (up to 5,000 listings per company per scan). Common titles such as Application Developer and Software Development Engineer map to the corresponding software role preferences. Mandatory Java/.NET/C# stacks are excluded; genuine alternative and preferred skills are handled separately. Mumbai/Pune geography and dated experience are enforced. Missing requirements go to review without matched alerts.
 
 Expand the source coverage panel above the dashboard metrics to see each source's checked, new, duplicate and rejected counts, common rejection reasons, failures and scan limits. The same persisted report is available at `/api/discovery-report`. Company feeds can change during pagination. Other enterprise companies using the LinkedIn guest adapter still have limited coverage; listing a company does not guarantee all of its openings are discovered. Saving preferences clears cached board validators so unchanged jobs can be reconsidered with the new filters.
+
+See [deployment compatibility](DEPLOYMENT_CHECK.md) and [Python companion](python/README.md). Private profile answers belong in ignored python/profile.local.json.
